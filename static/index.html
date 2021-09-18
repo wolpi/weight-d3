@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="d3.v6.js"></script>
+</head>
+
+<body>
+
+    <div id="graph"></div>
+
+<script>
+
+// set the dimensions and margins of the graph
+const margin = {top: 10, right: 30, bottom: 30, left: 60},
+    width = window.innerWidth - 50 - margin.left - margin.right,
+    height = window.innerHeight - 50 - margin.top - margin.bottom;
+
+// append the svg object to the body of the page
+const svg = d3.select("#graph")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+
+console.log("loading data");
+d3.json("data.json").then((data) => {
+    //console.log(data);
+
+    let min = d3.min(data, function(d) { return d.weight; })
+    let max = d3.max(data, function(d) { return d.weight; })
+    let avg = 0;
+    for (let i=0; i<data.length; i++) {
+        avg = avg + data[i].weight;
+    }
+    avg = avg / data.length;
+    console.log("min: " + min + ", max: " + max + ", avg: " + avg);
+
+    // note: d3.timeParse() returns a function
+    let timeParser = d3.timeParse("%Y-%m-%d %H:%M:%S");
+
+    // Add X axis --> it is a date format
+    const x = d3.scaleTime()
+      .domain(d3.extent(data, function(d) { return timeParser(d.timestamp); }))
+      .range([ 0, width ]);
+    svg.append("g")
+      .attr("transform", `translate(0, ${height})`)
+      .call(d3.axisBottom(x));
+
+    // Add Y axis
+    const y = d3.scaleLinear()
+      .domain([
+        min - 5,
+        max + 5
+      ])
+      .range([ height, 0 ]);
+    svg.append("g")
+      .call(d3.axisLeft(y));
+
+    // Add the line
+    svg.append("path")
+      .datum(data)
+      .attr("fill", "none")
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", 1)
+      .attr("d", d3.line()
+        .x((d) => { return x(timeParser(d.timestamp)) })
+        .y((d) => { return y(d.weight) })
+      );
+
+    // min line
+    svg.append('line')
+        .style("stroke", "green")
+        .style("stroke-width", 2)
+        .attr("x1", 0)
+        .attr("y1", y(min))
+        .attr("x2", width)
+        .attr("y2", y(min)); 
+
+    // max line
+    svg.append('line')
+        .style("stroke", "red")
+        .style("stroke-width", 2)
+        .attr("x1", 0)
+        .attr("y1", y(max))
+        .attr("x2", width)
+        .attr("y2", y(max)); 
+
+    // avg line
+    svg.append('line')
+        .style("stroke", "orange")
+        .style("stroke-width", 2)
+        .attr("x1", 0)
+        .attr("y1", y(avg))
+        .attr("x2", width)
+        .attr("y2", y(avg)); 
+
+    // trend
+    const trendAbstraction = 3;
+    let trendValues = [];
+    let trendTmp = [];
+    for (let i=0; i<data.length; i++) {
+        let currentVal = data[i].weight;
+        if (trendTmp.length < trendAbstraction) {
+            trendTmp.push(currentVal);
+        } else {
+            let sum = trendTmp.reduce(function (a, b) {
+                return a + b;
+            }, 0);
+            sum += currentVal;
+            let avg = sum / (trendTmp.length + 1);
+            trendValues.push({timestamp: data[i].timestamp, weight: avg});
+            trendTmp = [];
+        }
+    }
+    //console.log(trendValues);
+    svg.append("path")
+      .datum(trendValues)
+      .attr("fill", "none")
+      .attr("stroke", "blue")
+      .attr("stroke-width", 4)
+      .attr("d", d3.line()
+        .x((d) => { return x(timeParser(d.timestamp)) })
+        .y((d) => { return y(d.weight) })
+      );
+
+
+});
+
+</script>
+
+</body>
+</html>
+
