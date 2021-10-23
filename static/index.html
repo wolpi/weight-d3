@@ -50,14 +50,41 @@ d3.json("data.json").then((data) => {
       .call(d3.axisBottom(x));
 
     // Add Y axis
+    let minMaxOffset = 5;
     const y = d3.scaleLinear()
       .domain([
-        min - 5,
-        max + 5
+        min - minMaxOffset,
+        max + minMaxOffset
       ])
       .range([ height, 0 ]);
     svg.append("g")
       .call(d3.axisLeft(y));
+
+    // horizontal grid lines
+    for (let i=Math.floor(min - minMaxOffset + 1); i<max + minMaxOffset; i++) {
+        svg.append('line')
+            .style("stroke", "#eee")
+            .style("stroke-width", 1)
+            .attr("x1", 0)
+            .attr("y1", y(i))
+            .attr("x2", width)
+            .attr("y2", y(i));
+    }
+
+    // vertical grid lines
+    let firstYear = parseInt(data[0].timestamp.split("-")[0], 10)
+    let lastYear = parseInt(data[data.length-1].timestamp.split("-")[0], 10)
+    console.log("firstYear: " + firstYear + ", lastYear: " + lastYear);
+    for (let i=firstYear; i<=lastYear; i++) {
+        let currentDate = timeParser(i + "-01-01 00:00:00");
+        svg.append('line')
+            .style("stroke", "#eee")
+            .style("stroke-width", 1)
+            .attr("x1", x(currentDate))
+            .attr("y1", y(min - minMaxOffset))
+            .attr("x2", x(currentDate))
+            .attr("y2", y(max + minMaxOffset));
+    }
 
     // Add the line
     svg.append("path")
