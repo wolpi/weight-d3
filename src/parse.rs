@@ -33,6 +33,7 @@ impl WeightDateTime {
 pub struct Entry {
     pub timestamp :WeightDateTime,
     pub weight :f32,
+    pub raw_timestamp :u64,
 }
 
 impl Entry {
@@ -40,6 +41,7 @@ impl Entry {
         Entry {
             timestamp: WeightDateTime::new(NaiveDateTime::parse_from_str("1970-01-01 00:00:00", TIMESTAMP_FORMAT).unwrap()),
             weight: 0.0,
+            raw_timestamp: 0,
         }
     }
 }
@@ -120,7 +122,9 @@ fn parse_timestamp(line :&String, entry :&mut Entry, start_index :&usize) -> Res
             let timestamp_str: &str = &line_remainer[0 .. index -1];
             let parse_result = NaiveDateTime::parse_from_str(timestamp_str, TIMESTAMP_FORMAT);
             if parse_result.is_ok() {
-                entry.timestamp = WeightDateTime::new(parse_result.unwrap());
+                let timestamp = parse_result.unwrap();
+                entry.timestamp = WeightDateTime::new(timestamp);
+                entry.raw_timestamp = timestamp.timestamp_millis() as u64;
                 Result::Ok(*start_index +1 + index)
             } else {
                 Result::Err(err_msg)

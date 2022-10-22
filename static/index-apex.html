@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="apexcharts.v3.36.0.js"></script>
+</head>
+<body>
+
+<div id="graph"></div>
+
+<script>
+function render(data) {
+    var options = {
+      series: [{
+        name: 'Weight',
+        data: data
+      }],
+      chart: {
+      type: 'area',
+      stacked: false,
+      height: window.innerHeight - 50,
+      zoom: {
+        type: 'x',
+        enabled: true,
+        autoScaleYaxis: true
+      },
+      toolbar: {
+        autoSelected: 'zoom'
+      }
+    },
+    dataLabels: {
+      enabled: false
+    },
+    markers: {
+      size: 0,
+    },
+    title: {
+      text: 'Weight',
+      align: 'left'
+    },
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        inverseColors: false,
+        opacityFrom: 0.8,
+        opacityTo: 0,
+        stops: [0, 90, 100]
+      },
+    },
+    yaxis: {
+      labels: {
+        formatter: function (val) {
+          return Math.round(val);
+        },
+      },
+      title: {
+        text: 'Weight'
+      },
+    },
+    xaxis: {
+      type: 'datetime',
+    },
+    tooltip: {
+      shared: false,
+      y: {
+        formatter: function (val) {
+          return Math.round(val * 10) / 10;
+        }
+      }
+    }
+  };
+
+  var chart = new ApexCharts(document.querySelector("#graph"), options);
+  chart.render();
+
+}
+
+// load data
+const req = new XMLHttpRequest();
+req.addEventListener("load", (e) => {
+    let data = JSON.parse(e.target.response);
+    render(data);
+});
+req.open("GET", "data-apex.json");
+req.send();
+
+</script>
+</body>
+</html>

@@ -32,6 +32,16 @@ async fn data_json(req: HttpRequest) -> HttpResponse {
     HttpResponse::Ok().json(&DATA.lock().unwrap().deref())
 }
 
+#[get("/data-apex.json")]
+async fn data_apex_json(req: HttpRequest) -> HttpResponse {
+    println!("data-apex.json request from {}", req.connection_info().remote_addr().unwrap());
+    let data = DATA.lock().unwrap();
+    let data_apex :Vec<(&u64, &f32)> = data.deref().into_iter().map(
+        |entry| (&entry.raw_timestamp, &entry.weight)
+    ).collect();
+    HttpResponse::Ok().json(data_apex)
+}
+
 fn error_handlers() -> ErrorHandlers<Body> {
     ErrorHandlers::new().handler(StatusCode::NOT_FOUND, not_found)
 }
@@ -85,6 +95,7 @@ async fn main() -> io::Result<()> {
             .wrap(middleware::DefaultHeaders::new().header("Cache-Control", "max-age=0"))
             // register data_json before static files on /
             .service(data_json)
+            .service(data_apex_json)
             .service(actix_web_static_files::ResourceFiles::new("/", generated,))
     })
     .bind("0.0.0.0:8080")?
