@@ -22,6 +22,8 @@ use std::io;
 use std::env;
 use std::ops::Deref;
 
+use webbrowser;
+
 lazy_static! {
     static ref DATA: Mutex<Vec<parse::Entry>> = Mutex::new(vec![]);
 }
@@ -88,6 +90,18 @@ async fn main() -> io::Result<()> {
     }
     init_data(&file_result.unwrap());
 
+    let port = "8080";
+    let mut browser_url = "http://127.0.0.1:".to_string();
+    browser_url.push_str(port);
+    println!("opening browser at {} ...", browser_url);
+    let browser_result = webbrowser::open(browser_url.as_str());
+    if browser_result.is_err() {
+        println!("... failed");
+        println!("{}", browser_result.err().unwrap());
+    }
+
+    let mut bind = "0.0.0.0:".to_string();
+    bind.push_str(port);
     HttpServer::new(move || {
         let generated = generate();
         App::new()
@@ -98,7 +112,7 @@ async fn main() -> io::Result<()> {
             .service(data_apex_json)
             .service(actix_web_static_files::ResourceFiles::new("/", generated,))
     })
-    .bind("0.0.0.0:8080")?
+    .bind(bind.as_str())?
     .run()
     .await
 }
